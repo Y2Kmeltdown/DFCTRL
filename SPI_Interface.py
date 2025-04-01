@@ -220,6 +220,7 @@ class crazy_processor():
                 
 
 if __name__ == "__main__":
+    #TODO modify code to accept main data type that is planning on being used
 
     instructionMemory = "data/instruction_data.txt"
     parameterMemory = "data/parameter_data.txt"
