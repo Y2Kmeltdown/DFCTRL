@@ -1,19 +1,8 @@
 import spidev
-import time
-import textwrap
 import RPi.GPIO as GPIO
 import math
-import signal
-import sys
 
-BUTTON_GPIO = 16
 
-def signal_handler(sig, frame):
-    GPIO.cleanup()
-    sys.exit(0)
-    
-def button_pressed_callback(channel):
-    print("Data Ready!")
 
 def flatten(xss):
     return [x for xs in xss for x in xs]
@@ -25,7 +14,7 @@ def listsplit(a:list, n:int):
     k, m = divmod(len(a), n)
     return (list(a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n)))
 
-def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = None, packetSize = None):
+def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = None, messageSize = None):
     if packetType == "instruction":
         memoryHeader = 192 #11
         addressWidth = 6
@@ -41,16 +30,18 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
 
     if read:
         readHeader = 32 #1
+        dataList = ["0"*addressWidth]*messageSize
     else:
         readHeader = 0 #0
+        dataList = data.split("\n")
+        dataList = list(filter(None, dataList))
 
-
-    dataList = data.split("\n")
-    dataList = list(filter(None, dataList))
+    
+    
     #print(dataList)
 
-    if packetSize:
-        dataPacketSize = packetSize
+    if messageSize:
+        dataPacketSize = messageSize
     else:
         dataPacketSize = len(dataList)-1
 
@@ -58,24 +49,24 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
     # print("Number of bytes in a data word")
     # print(numBytes) # Numebr of bytes in data word
 
-    print("########################")
+    # print("########################")
 
     numWords = 350//numBytes
-    print("Number of words per SPI packet")
-    print(numWords) # Number of words that can fit in an SPI packet
+    # print("Number of words per SPI packet")
+    # print(numWords) # Number of words that can fit in an SPI packet
 
-    print("Number of words required to send")
-    print(dataPacketSize) # Number of words required to send
+    # print("Number of words required to send")
+    # print(dataPacketSize) # Number of words required to send
 
     numPackets = math.ceil(dataPacketSize/numWords)
-    print("Number of packets required to send")
-    print(numPackets) # Number of words required to send
+    # print("Number of packets required to send")
+    # print(numPackets) # Number of words required to send
 
 
     SPI_Packet_list = listsplit(dataList, numPackets)
-    print("Number of words sent in each SPI packet")
-    print(len(SPI_Packet_list[-1]))
-    print("########################")
+    # print("Number of words sent in each SPI packet")
+    # print(len(SPI_Packet_list[-1]))
+    # print("########################")
 
     outputDataList = []
     if startAddress is None:
@@ -105,6 +96,10 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
             burstHeader = 0 # 1
             burstCount = 0
             burst = []
+    
+        # print("###### BURST #######")
+        # print(burst)
+        # print("#############")
 
         headerIdentifier = 12
 
@@ -118,8 +113,13 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
             addressBottom = spi_packet_address & 0xff
             address = [addressTop, addressBottom]
 
+        
+        # print("###### ADDRESS #######")
+        # print(address)
+        # print("#############")
+
         if read:
-            pass
+            outputData = [0]*(packetSize+1)
         else:
             outputData = []
             n = 8
@@ -131,76 +131,107 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
 
     return outputDataList
 
+class crazy_processor():
+    
+    def __init__(
+        self,
+        instruction_file:str,
+        parameter_file:str = None,
+        spi_bus:int = 0, 
+        spi_device:int = 1, 
+        spi_speed:int = 4000000,
+        spi_mode:int = 0b00,
+        interrupt_pin:int = 16,
+        ):
+        self._bus = spi_bus
+        self._device = spi_device
+        self._spi = spidev.SpiDev()
+        self._spi_speed = spi_speed
+        self._spi_mode = spi_mode
+        self._interrupt_pin = interrupt_pin
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self._interrupt_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        self.processor_reset()
+        self.processor_init(instruction_file, parameter_file)
+
+
+    def spi_decorator(func):
+        def wrapper(self, *args,**kwargs):
+            self._spi.open(self._bus, self._device)
+            self._spi.max_speed_hz = self._spi_speed
+            self._spi.mode = self._spi_mode
+            out = func(self, *args,**kwargs)
+            self._spi.close()
+            return out
+        return wrapper
+    
+    @spi_decorator
+    def processor_init(self, instruction_file, parameter_file):
+
+        with open(instruction_file, "r") as f:
+            data = f.read()
+        spiData = packetGenerator(data, "instruction")
+        for packet in spiData:
+            resp = self._spi.xfer2(packet)
+
+        # with open(parameter_file, "r") as f:
+        #     data = f.read()
+        # spiData = packetGenerator(data, "parameter")
+        # for packet in spiData:
+        #     resp = self._spi.xfer2(packet)
+
+    @spi_decorator
+    def processor_reset(self): 
+        resp = self._spi.xfer2([int("00001101", 2)])
+
+    @spi_decorator
+    def processor_enable(self):
+        resp = self._spi.xfer2([int("00001110", 2)])
+
+    @spi_decorator
+    def processor_disable(self):
+        resp = self._spi.xfer2([int("00001100", 2)])
+
+    @spi_decorator
+    def _send_activation(self, data):
+        spiData = packetGenerator(data, "activation")
+        for packet in spiData:
+            resp = self._spi.xfer2(packet)
+
+    @spi_decorator
+    def _read_output(self, startAddress, outputLength):
+        spiData = packetGenerator("", "activation", True,startAddress, outputLength)
+        outputData = []
+        for packet in spiData:
+            resp = self._spi.xfer2(packet)
+            outputData.extend(resp[-outputLength:])
+        return outputData
+
+    
+    def processor_run(self, activation_data, outputLength:int = 4, startAddress:int = 0):
+        self._send_activation(activation_data)
+        self.processor_reset()
+        self.processor_enable()
+        GPIO.wait_for_edge(self._interrupt_pin, GPIO.RISING)
+        outputData = self._read_output(startAddress,outputLength)
+        self.processor_disable()
+        self.processor_reset()
+        return outputData
+                
+
 if __name__ == "__main__":
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(BUTTON_GPIO, GPIO.RISING, 
-            callback=button_pressed_callback, bouncetime=100)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-
-    bus = 0
-    device = 1
-    spi = spidev.SpiDev()
-    spi.open(bus, device)
-
-    # Settings
-    spi.max_speed_hz = 4000000
-    spi.mode = 0b00
-
     instructionMemory = "data/instruction_data.txt"
-    instructionBytes = "data/instruction_data_SPI.txt"
     parameterMemory = "data/parameter_data.txt"
-    parameterBytes = "data/parameter_data_SPI.txt"
     activationMemory = "data/activation_data.txt"
-    activationBytes = "data/activation_data_SPI.txt"
-    activationOutputPacket = "data/activation_read_SPI.txt"
 
-    resp = spi.xfer2([int("00001101", 2)])
-    #time.sleep(1)
-
-    with open(instructionMemory, "r") as f:
-        data = f.read()
-    spiData = packetGenerator(data, "instruction")
-    for packet in spiData:
-        resp = spi.xfer2(packet)
-    #time.sleep(1)
-
-    # with open(parameterMemory, "r") as f:
-    #     data = f.read()
-    # spiData = packetGenerator(data, "parameter")
-    # for packet in spiData:
-    #     time.sleep(0.5)
-    #     resp = spi.xfer2(packet)
-    # time.sleep(1)
+    crazy_proc = crazy_processor(instructionMemory)
 
     with open(activationMemory, "r") as f:
         data = f.read()
-    spiData = packetGenerator(data, "activation")
-    for packet in spiData:
-        resp = spi.xfer2(packet)
-    #time.sleep(1)
+    outputData = crazy_proc.processor_run(data)
+    print(outputData)
 
-    resp = spi.xfer2([int("00001101", 2)])
-    #time.sleep(1)
-
-    resp = spi.xfer2([int("00001110", 2)])
-    #time.sleep(1)
-
-    signal.pause()
-
-    # startAddress = "00000000000"
-    # packetSize = 4
-    # spiData = packetGenerator("", "activation", True,startAddress, packetSize)
-    # spiData = convertBinaryList(spiData)
-    # time.sleep(1)
-
-    # resp = spi.xfer2([int("00001100", 2)])
-    # time.sleep(1)
-
-    # resp = spi.xfer2([int("00001101", 2)])
-    # time.sleep(1)
 
 
     
