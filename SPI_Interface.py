@@ -225,7 +225,7 @@ if __name__ == "__main__":
     parameterMemory = "data/parameter_data.txt"
     activationMemory = "data/activation_data.txt"
 
-    crazy_proc = crazy_processor(instructionMemory)
+    crazy_proc = crazy_processor(instructionMemory, parameterMemory)
 
     with open(activationMemory, "r") as f:
         data = f.read()
