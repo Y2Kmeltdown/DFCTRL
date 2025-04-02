@@ -1,0 +1,106 @@
+module SPI #(
+    parameter 
+    SPI_BUS_WIDTH = 8
+)
+(
+    input clk,
+    input chip_select_n,
+    input sub_clk,
+    input sub_in,
+    inout sub_out,
+    input   reset_n,
+    output  reg     rd_req,
+    output  reg     wr_req,
+
+    input   [SPI_BUS_WIDTH-1:0]   internal_to_SPI_in,
+    output  [SPI_BUS_WIDTH-1:0]   SPI_to_internal_out
+);
+
+edge_detector #(
+    .POSEDGE(1'b0)
+) spi_negedge (
+        // Inputs:
+    .clk  (clk),
+    .reset_n  (reset_n),
+    .sig  (sub_clk),
+        // Outputs:
+    .out  (),
+    .sig_edge   (spiNEGEDGE)
+);
+
+edge_detector #(
+    .POSEDGE(1'b1)
+) spi_posedge (
+        // Inputs:
+    .clk  (clk),
+    .reset_n  (reset_n),
+    .sig  (sub_clk),
+        // Outputs:
+    .out  (),
+    .sig_edge   (spiPOSEDGE)
+);
+    
+// Primary SPI shift Register
+reg     [SPI_BUS_WIDTH-1:0]   shift_reg;
+
+//assign SPI_to_internal_out = spi_buffer;
+assign SPI_to_internal_out = shift_reg;
+
+// Shift register output buffer to send data over SPI
+reg             shift_out;
+assign sub_out = !chip_select_n ? shift_out : 1'bZ;
+
+// Read and write counters to synchronise updating and reading the SPI shift register
+reg     [2:0]   write_bit_cnt;
+reg     [2:0]   read_bit_cnt;
+
+
+always @(posedge clk or negedge reset_n) begin
+    if (!reset_n) begin
+        shift_reg <= 1'b0;
+        wr_req <= 1'b0;
+        shift_out <= 1'b0;
+        rd_req <= 1'b0;
+        read_bit_cnt <= 3'b0;
+        write_bit_cnt <= 3'b0;
+    end
+    else begin
+        if (spiPOSEDGE) begin
+            if (!chip_select_n) begin
+                // primary shift operation to rotated bits through SPI connection
+                shift_reg = shift_reg << 1;
+                shift_reg[0] <= sub_in; 
+
+                write_bit_cnt <= write_bit_cnt + 1; 
+            end
+
+            if (write_bit_cnt == SPI_BUS_WIDTH-1) begin
+                // Once SPI_BUS_WIDTH-1 bits have been read over SPI shift register bits are transferred to SPI buffer to be sent to internal system
+                wr_req <= 1'b1;
+            end
+            else begin
+                wr_req <= 1'b0;
+            end
+        end
+        else if (spiNEGEDGE) begin
+            if (!chip_select_n) begin
+
+                // Read bit incrementer
+                shift_out <= shift_reg[SPI_BUS_WIDTH-1];
+                read_bit_cnt <= read_bit_cnt + 1;
+            end
+            
+            if (read_bit_cnt == SPI_BUS_WIDTH-1) begin
+                // Once SPI_BUS_WIDTH-1 bits have been read over SPI shift register bits are transferred to SPI buffer to be sent to internal system
+                rd_req <= 1'b1;
+                shift_reg <= internal_to_SPI_in;
+            end
+            else begin
+                rd_req <= 1'b0;
+            end
+        end
+    end
+end
+ 
+
+endmodule
