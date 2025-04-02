@@ -1,6 +1,7 @@
 import spidev
 import RPi.GPIO as GPIO
 import math
+import time
 
 
 
@@ -139,7 +140,7 @@ class crazy_processor():
         parameter_file:str = None,
         spi_bus:int = 0, 
         spi_device:int = 1, 
-        spi_speed:int = 4000000,
+        spi_speed:int = 7500000,
         spi_mode:int = 0b00,
         interrupt_pin:int = 16,
         ):
@@ -230,9 +231,13 @@ if __name__ == "__main__":
 
     with open(activationMemory, "r") as f:
         data = f.read()
+
+    starttime = time.monotonic_ns()
     outputData = crazy_proc.processor_run(data)
+    endtime = time.monotonic_ns()
+
+    timeTaken = (endtime - starttime)/1000000000
+    print("Output Bytes")
     print(outputData)
-
-
-
-    
+    print("Processing time")
+    print(timeTaken)
