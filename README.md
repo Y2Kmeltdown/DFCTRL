@@ -2,21 +2,21 @@
 The SPI bus on the crazy fly processor has a control mechanism that allows it to operate in multiple different modes depending on the first byte you send in a packet. The header packet determines which memory you access, whether you read or write to the memory and how much data you read or write.
 
 | Header Byte        | Bit 7 | Bit 6 | Bit 5 | Bit 4 | Bit 3 | Bit 2 | Bit 1 | Bit 0 |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Activation Memory  | 1     | 0     | x     | x     | x     | x     | x     | x     |
 | Instruction Memory | 1     | 1     | x     | x     | x     | x     | x     | x     |
 | Parameter Memory   | 0     | 1     | x     | x     | x     | x     | x     | x     |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Write Mode         | x     | x     | 0     | x     | x     | x     | x     | x     |
 | Read Mode          | x     | x     | 1     | x     | x     | x     | x     | x     |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Burst Mode         | x     | x     | x     | 1     | x     | x     | x     | x     |
 | Single Mode        | x     | x     | x     | 0     | x     | x     | x     | x     |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Burst Length       | x     | x     | x     | x     | x     | x     | 0/1   | 0/1   |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Header Identifier  | x     | x     | x     | x     | 1     | 1     | x     | x     |
-|--------------------|-------|-------|-------|-------|-------|-------|-------|-------|
+| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Processor Resest   | 0     | 0     | x     | x     | x     | x     | x     | 1     |
 | Processor Enable   | 0     | 0     | x     | x     | x     | x     | 1     | x     |
 | Processor Disable  | 0     | 0     | x     | x     | x     | x     | 0     | x     |
@@ -38,3 +38,9 @@ If Byte 7 and Byte 6 are both set to 0 this will put the spi bus in register mod
 In this mode bit 1 will control a processor enable register allowing you to enable and disable the processor.
 Bit 0 will control a processor reset line. Setting bit 0 to 1 will temporarily trigger a processor reset for around 16 clock cycles and then the register will be set back to 0.
 Setting bit 0 to 0 in this mode does nothing.
+
+## SPI Packet structure
+### Writing
+| Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Write Bytes |
+### Reading
+| Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Filler Bytes |
