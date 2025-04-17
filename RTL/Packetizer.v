@@ -108,6 +108,8 @@ reg [11:0]  burst_counter;
 reg 			rd_req_buffer;
 reg 			wr_req_buffer;
 
+reg [3:0]	reg_buffer;
+
 
 reg addr_inc;
 
@@ -158,8 +160,8 @@ assign {act_mem_wren, param_mem_wren, inst_mem_wren} = isHEADER_act      ? {enab
                                                                            {1'b0, 1'b0, 1'b0})) ;
 
 // Packet counter
-always @(negedge spi_clk or negedge reset_n or posedge SPI_done or posedge chip_select_n) begin
-    if ((!reset_n) || SPI_done || chip_select_n) begin
+always @(negedge spi_clk or negedge reset_n or posedge SPI_done) begin
+    if ((!reset_n) || SPI_done) begin
         packet_counter <= 1'b0;
         spi_clk_counter <= 1'b0;
     end
@@ -229,6 +231,8 @@ always @(posedge clk or negedge reset_n) begin
         proc_reset <= 1'b0;
 
         data_ready <= 1'b0;
+		  
+		  reg_buffer <= 1'b0;
     end
     else begin
         case (r_SM_MAIN)
@@ -272,12 +276,18 @@ always @(posedge clk or negedge reset_n) begin
                     burst_length <= 1'b0;
 						  write_time <= 1'b0;
                     proc_reset <= 1'b0;
+						  reg_buffer <= 1'b0;
                 end
             s_REG:
                 begin
                     proc_enable <= header[WIDTH_SPI_WORD-7];
                     proc_reset <= header[0];
-                    r_SM_MAIN <= s_HEADER;
+						  reg_buffer <= reg_buffer + 1'b1;
+						  if (reg_buffer >= 4'd15) begin
+								header <= 1'b0;
+								SPI_done <= 1'b1;
+								r_SM_MAIN <= s_HEADER;
+						  end
                 end
             s_BURST:
                 begin
@@ -444,48 +454,38 @@ always @(posedge clk or negedge reset_n) begin
                 end
             s_READY:
                 begin
-                    if (chip_select_n_sync) begin
-                        r_SM_MAIN <= s_HEADER;
-                        SPI_done <= 1'b1;
-                    end
-                    else begin
-                        wr_req <= 1'b0;
-                        act_mem_addr_buffer <= 1'b1;
-                        act_mem_data_buffer <= 1'b1;
-                        param_mem_addr_buffer <= 1'b1;
-                        param_mem_data_buffer <= 1'b1;
-                        inst_mem_addr_buffer <= 1'b1;
-                        inst_mem_data_buffer <= 1'b1;
+						wr_req <= 1'b0;
+						act_mem_addr_buffer <= 1'b1;
+						act_mem_data_buffer <= 1'b1;
+						param_mem_addr_buffer <= 1'b1;
+						param_mem_data_buffer <= 1'b1;
+						inst_mem_addr_buffer <= 1'b1;
+						inst_mem_data_buffer <= 1'b1;
 
-                        if (isREADOP) begin
-                            sel_ext <= 1'b1;
-                            enable <= 1'b1;
-                            SPI_done <= 1'b1;
-									 header <= 1'b0;
-                            r_SM_MAIN <= s_HEADER;
-                        end
-                        else if (isWRITEOP) begin
-									 data_ready <= 1'b1;
-									 if (!read_fifo_empty) begin   
-										  rd_req <= !rd_req;
-									 end
-									 else begin
-										  rd_req <= 1'b0;
-									 end
-									 if (isBURSTOP) begin
-										 if (write_fifo_empty && (packet_cnt_sync - write_time > burst_length)) begin
-											  SPI_done <= 1'b1;
-											  header <= 1'b0;
-											  r_SM_MAIN <= s_HEADER;
-										 end
-									 end
-									 else begin
-										  if (write_fifo_empty && packet_cnt_sync > write_time) begin
-												r_SM_MAIN <= s_HEADER;
-										  end
-									 end
-								end
-                    end
+						if (isREADOP) begin
+							 sel_ext <= 1'b1;
+							 enable <= 1'b1;
+							 SPI_done <= 1'b1;
+							 header <= 1'b0;
+							 r_SM_MAIN <= s_HEADER;
+						end
+						else if (isWRITEOP) begin
+							 data_ready <= 1'b1;
+							 if (!read_fifo_empty) begin   
+								  rd_req <= !rd_req;
+							 end
+							 else begin
+								  rd_req <= 1'b0;
+							 end
+							 
+							 if (write_fifo_empty) begin
+								  SPI_done <= 1'b1;
+								  header <= 1'b0;
+								  r_SM_MAIN <= s_HEADER;
+							 end
+							 
+						end
+                    
                 end
             default:
                 r_SM_MAIN <= s_HEADER;
