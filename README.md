@@ -6,17 +6,12 @@ The SPI bus on the crazy fly processor has a control mechanism that allows it to
 | Activation Memory  | 1     | 0     | x     | x     | x     | x     | x     | x     |
 | Instruction Memory | 1     | 1     | x     | x     | x     | x     | x     | x     |
 | Parameter Memory   | 0     | 1     | x     | x     | x     | x     | x     | x     |
-| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Write Mode         | x     | x     | 0     | x     | x     | x     | x     | x     |
 | Read Mode          | x     | x     | 1     | x     | x     | x     | x     | x     |
-| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Burst Mode         | x     | x     | x     | 1     | x     | x     | x     | x     |
 | Single Mode        | x     | x     | x     | 0     | x     | x     | x     | x     |
-| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Burst Length       | x     | x     | x     | x     | x     | x     | 0/1   | 0/1   |
-| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Header Identifier  | x     | x     | x     | x     | 1     | 1     | x     | x     |
-| ------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Processor Resest   | 0     | 0     | x     | x     | x     | x     | x     | 1     |
 | Processor Enable   | 0     | 0     | x     | x     | x     | x     | 1     | x     |
 | Processor Disable  | 0     | 0     | x     | x     | x     | x     | 0     | x     |
@@ -41,6 +36,10 @@ Setting bit 0 to 0 in this mode does nothing.
 
 ## SPI Packet structure
 ### Writing
-| Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Write Bytes |
+|             |                 |                   |              |
+| ----------- | --------------- | ----------------- | ------------ |
+| Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Write Bytes  |
 ### Reading
+|             |                 |                   |              |
+| ----------- | --------------- | ----------------- | ------------ |
 | Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Filler Bytes |
