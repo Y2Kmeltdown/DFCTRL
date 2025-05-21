@@ -2,6 +2,7 @@ import spidev
 import RPi.GPIO as GPIO
 import math
 import time
+from threading import Thread
 
 
 
@@ -77,10 +78,9 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
     for packetNum, packet in enumerate(SPI_Packet_list):
         spi_packet_address += packetSize
         packetSize = len(packet)
-
         burstTop = (packetSize >> 16) & 0xff
         burstMiddle = (packetSize >> 8) & 0xff
-        burstBottom = packetSize & 0xff -1
+        burstBottom = (packetSize & 0xff) -1
         if burstTop:
             burstHeader = 16 # 1
             burstCount = 3
@@ -97,6 +97,8 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
             burstHeader = 0 # 1
             burstCount = 0
             burst = []
+            
+        
     
         # print("###### BURST #######")
         # print(burst)
@@ -140,9 +142,9 @@ class crazy_processor():
         parameter_file:str = None,
         spi_bus:int = 0, 
         spi_device:int = 1, 
-        spi_speed:int = 7500000,
+        spi_speed:int = 5000000,
         spi_mode:int = 0b00,
-        interrupt_pin:int = 16,
+        interrupt_pin:int = 25,
         ):
         self._bus = spi_bus
         self._device = spi_device
@@ -153,6 +155,7 @@ class crazy_processor():
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self._interrupt_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         self.processor_reset()
+        #time.sleep(10)
         self.processor_init(instruction_file, parameter_file)
 
 
@@ -169,6 +172,7 @@ class crazy_processor():
     @spi_decorator
     def processor_init(self, instruction_file, parameter_file):
 
+        time.sleep(1)
         with open(instruction_file, "r") as f:
             data = f.read()
         spiData = packetGenerator(data, "instruction")
@@ -207,25 +211,47 @@ class crazy_processor():
             resp = self._spi.xfer2(packet)
             outputData.extend(resp[-outputLength:])
         return outputData
+    
+    def _triggerWait(self):
+        GPIO.wait_for_edge(self._interrupt_pin, GPIO.RISING)
+    
 
     
     def processor_run(self, activation_data, outputLength:int = 4, startAddress:int = 0):
+        triggerWait = Thread(target=self._triggerWait, daemon=True)
+        triggerWait.start()
         self._send_activation(activation_data)
+        #time.sleep(10)
         self.processor_reset()
+        #time.sleep(10)
         self.processor_enable()
-        GPIO.wait_for_edge(self._interrupt_pin, GPIO.RISING)
+
+        
+        triggerWait.join()
+        #time.sleep(10)
         outputData = self._read_output(startAddress,outputLength)
+        #time.sleep(0.01)
+        #time.sleep(10)
         self.processor_disable()
+        #time.sleep(10)
         self.processor_reset()
         return outputData
                 
 
 if __name__ == "__main__":
     #TODO modify code to accept main data type that is planning on being used
-
-    instructionMemory = "data/instruction_data.txt"
-    parameterMemory = "data/parameter_data.txt"
-    activationMemory = "data/activation_data.txt"
+    version = "14052025"
+    if version == "15052025":
+        
+        instructionMemory = "data/15052025_instruction_data.txt"
+        parameterMemory = "data/15052025_parameter_data.txt"
+        activationMemory = "data/15052025_activation_data.txt"
+        startAddress = 256
+    elif version == "14052025":
+        instructionMemory = "data/14052025_instruction_data.txt"
+        parameterMemory = "data/14052025_parameter_data.txt"
+        activationMemory = "data/14052025_activation_data.txt"
+        startAddress = 128
 
     crazy_proc = crazy_processor(instructionMemory, parameterMemory)
 
@@ -233,7 +259,7 @@ if __name__ == "__main__":
         data = f.read()
 
     starttime = time.monotonic_ns()
-    outputData = crazy_proc.processor_run(data)
+    outputData = crazy_proc.processor_run(data, startAddress=startAddress)
     endtime = time.monotonic_ns()
 
     timeTaken = (endtime - starttime)/1000000000

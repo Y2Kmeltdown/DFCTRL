@@ -30,8 +30,12 @@ module ram_sync_rw_single_port#(parameter MEM_WIDTH_DATA = 8, MEM_DEPTH = 256, W
 );
 
     reg [MEM_WIDTH_DATA-1:0]mem[0:MEM_DEPTH-1];
-
-
+    
+//    initial
+//    begin
+//         $readmemb("D:/WSU_Research/RL Drone/Codes/Software/Data/param_mem_bin.txt", mem);
+//    end 
+     
     //**------READ FROM MEM-----**//
 
     always@(posedge clk)

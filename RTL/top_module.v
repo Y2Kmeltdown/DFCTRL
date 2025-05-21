@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module processor_top#(parameter WIDTH_WGT = 8, DATA_WIDTH = 8, PSUM_WIDTH = 32, N_PEs = 16, N_PEsby4 = 4, BIAS_WIDTH= 16, ALPHA_WIDTH = 16, BETA_WIDTH = 8,
-WIDTH_ACT_MEM = 8, WIDTH_PARAM_MEM = 128, WIDTH_INST_MEM = 80, DEPTH_ACT_MEM = 3000, DEPTH_PARAM_MEM = 25500, DEPTH_INST_MEM = 64, WIDTH_ADDR_ACT = 12, WIDTH_ADDR_PARAM = 15,
+WIDTH_ACT_MEM = 8, WIDTH_PARAM_MEM = 128, WIDTH_INST_MEM = 80, DEPTH_ACT_MEM = 4096, DEPTH_PARAM_MEM = 7000, DEPTH_INST_MEM = 64, WIDTH_ADDR_ACT = 12, WIDTH_ADDR_PARAM = 13,
 WIDTH_ADDR_INST = 6, WGT_TILE_WIDTH = 8)(
     input clk, 
     input resetn, 
@@ -45,7 +45,7 @@ WIDTH_ADDR_INST = 6, WGT_TILE_WIDTH = 8)(
 
 //**------WIRE DECLARATIONS-----**//
 
-wire shift,load_bias,load_psum,sel_pe_reg,ia_sign,rst_pe_reg,rst_pe_relu_reg,wea_actmem,wea_parammem,wea_instmem,rst_addr_instmem,en_addr_instmem,load_base_instmem,rst_addr_parammem,en_addr_parammem,load_base_parammem,rst_addr_actmem,en_addr_actmem,load_base_actmem;
+wire shift,load_bias,load_psum,sel_pe_reg,ia_sign,rst_pe_reg,rst_pe_relu_reg,wea_actmem,wea_parammem,wea_instmem,rst_addr_instmem,en_addr_instmem,load_base_instmem,rst_addr_parammem,en_addr_parammem,load_base_parammem,rst_addr_actmem,en_addr_actmem,load_base_actmem,if_relu;
 wire [N_PEs-1:0]wea_reg1,wea_reg2;
 wire [WIDTH_PARAM_MEM-1:0]parammem_out; 
 wire [WIDTH_INST_MEM-1:0]instmem_out;
@@ -74,7 +74,7 @@ controller_top #(.WIDTH_INST_MEM(WIDTH_INST_MEM),.WIDTH_ADDR_INST(WIDTH_ADDR_INS
 .clk(clk),.resetn(resetn),.en(en),.inst(instmem_out),.base_addr_instmem_reg(base_addr_instmem),.stride_instmem_reg(stride_instmem),.rst_addr_instmem_reg(rst_addr_instmem),.en_addr_instmem_reg(en_addr_instmem),
 .load_base_instmem_reg(load_base_instmem),.base_addr_actmem_reg(base_addr_actmem),.stride_actmem_reg(stride_actmem),.rst_addr_actmem_reg(rst_addr_actmem),.en_addr_actmem_reg(en_addr_actmem),.load_base_actmem_reg(load_base_actmem),
 .wea_actmem_reg(wea_actmem_int),.base_addr_parammem_reg(base_addr_parammem),.stride_parammem_reg(stride_parammem),.rst_addr_parammem_reg(rst_addr_parammem),.en_addr_parammem_reg(en_addr_parammem),.load_base_parammem_reg(load_base_parammem),
-.rst_pe_reg_reg(rst_pe_reg),.rst_pe_relu_reg_reg(rst_pe_relu_reg),.wea_reg_reg1(wea_reg1),.wea_reg_reg2(wea_reg2),.shift_reg(shift),.load_bias_reg(load_bias),.load_psum_reg(load_psum),.sel_pe_reg_reg(sel_pe_reg),.ia_sign_reg(ia_sign),.done_reg(done),.done_layer_reg(done_layer),.sel_ppm_param_present(sel_ppm_param));
+.rst_pe_reg_reg(rst_pe_reg),.rst_pe_relu_reg_reg(rst_pe_relu_reg),.wea_reg_reg1(wea_reg1),.wea_reg_reg2(wea_reg2),.shift_reg(shift),.load_bias_reg(load_bias),.load_psum_reg(load_psum),.sel_pe_reg_reg(sel_pe_reg),.ia_sign_reg(ia_sign),.done_reg(done),.done_layer_reg(done_layer),.sel_ppm_param_present(sel_ppm_param),.if_relu(if_relu));
     
 //**------ACTIVATION MEMORY (SINGLE PORT) AND ADDR GENERATION-----**//
 
@@ -100,7 +100,7 @@ instruction_mem instruction_memory (.clock(clk),.wren(wea_instmem),.data(instmem
 //**------PE ARRAY-----**//
     
 pe_array#(.WIDTH_WGT(WIDTH_WGT),.DATA_WIDTH(DATA_WIDTH),.PSUM_WIDTH(PSUM_WIDTH),.N_PEs(N_PEs),.BIAS_WIDTH(BIAS_WIDTH)) processing_array (.clk(clk),.reset(rst_pe_reg),.rst_pe_relu_reg(rst_pe_relu_reg),.wea_reg1(wea_reg1),.wea_reg2(wea_reg2),
-.shift(shift),.load_bias(load_bias),.load_psum(load_psum),.sel_pe_reg(sel_pe_reg),.ia_sign(ia_sign),.ia(actmem_out),.wgt(parammem_out),.bias({parammem_out,parammem_out}),.psum_out(psum_out));
+.shift(shift),.load_bias(load_bias),.load_psum(load_psum),.sel_pe_reg(sel_pe_reg),.ia_sign(ia_sign),.if_relu(if_relu),.ia(actmem_out),.wgt(parammem_out),.bias({parammem_out,parammem_out}),.psum_out(psum_out));
 
 //**------POST PROCESSING MODULE-----**//
 
@@ -108,6 +108,6 @@ assign alpha = parammem_out[ALPHA_WIDTH+BETA_WIDTH-1:BETA_WIDTH];
 assign beta = parammem_out[BETA_WIDTH-1:0];
 
 post_processing #(.DATA_WIDTH(DATA_WIDTH),.PSUM_WIDTH(PSUM_WIDTH),.ALPHA_WIDTH(ALPHA_WIDTH), 
-.BETA_WIDTH(BETA_WIDTH)) ppm (.clk(clk),.ppm_ip(psum_out),.beta(beta),.alpha(alpha),.ppm_out(actmem_in_int));
+.BETA_WIDTH(BETA_WIDTH)) ppm (.clk(clk),.if_relu(if_relu),.ppm_ip(psum_out),.beta(beta),.alpha(alpha),.ppm_out(actmem_in_int));
 
 endmodule

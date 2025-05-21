@@ -23,7 +23,7 @@
 module pe#(parameter WIDTH_WGT = 8, DATA_WIDTH = 8, PSUM_WIDTH = 32, BIAS_WIDTH = 16)(
     input clk, 
     input reset, rst_pe_relu_reg,
-    input wea_reg1, wea_reg2, gate_en,
+    input wea_reg1, wea_reg2, gate_en, if_relu,
     input shift, load_bias, load_psum, sel_pe_reg, 
     input ia_sign,
     input [DATA_WIDTH-1:0] ia,
@@ -53,7 +53,7 @@ assign ip1_mult = ia_sign ? {ia_reg[DATA_WIDTH-1], ia_reg} : {1'b0, ia_reg};
 assign mult_out = $signed(ip1_mult) * $signed(wgt_reg);
 assign mux_out1 = load_psum ? psum_out2 : {{(PSUM_WIDTH-DATA_WIDTH-WIDTH_WGT-1){mult_out[DATA_WIDTH+WIDTH_WGT]}}, mult_out};
 assign add_out = psum_out1 + mux_out1;
-assign add_out_relu = (add_out[PSUM_WIDTH-1] & ~rst_pe_relu_reg) ? 0 : add_out;
+assign add_out_relu = (add_out[PSUM_WIDTH-1] & ~rst_pe_relu_reg & if_relu) ? 0 : add_out; //Change here
 assign mux_out2 = shift ? psum_in : add_out_relu;
 assign mux_out3 = load_bias ? {{(PSUM_WIDTH-BIAS_WIDTH){bias[BIAS_WIDTH-1]}}, bias} : mux_out2;
 assign psum_out = sel_pe_reg ? psum_out2 : psum_out1;

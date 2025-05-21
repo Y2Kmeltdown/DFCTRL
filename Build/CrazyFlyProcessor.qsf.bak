@@ -225,5 +225,5 @@ set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=61" -se
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=101" -section_id DATA_20READ_20TESTING
 set_global_assignment -name EDA_NETLIST_WRITER_OUTPUT_DIR simulation/questa -section_id eda_simulation
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=2" -section_id DATA_20READ_20TESTING
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE "db/SPI Bus Test_auto_stripped.stp"
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

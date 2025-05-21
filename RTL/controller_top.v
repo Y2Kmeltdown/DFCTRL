@@ -33,7 +33,8 @@ output reg rst_addr_parammem_reg,en_addr_parammem_reg,load_base_parammem_reg,
 output reg rst_pe_reg_reg,rst_pe_relu_reg_reg,shift_reg,load_bias_reg,load_psum_reg,sel_pe_reg_reg,ia_sign_reg,
 output reg [N_PEs-1:0]wea_reg_reg1,wea_reg_reg2,
 output reg done_reg,done_layer_reg,
-output reg [1:0] sel_ppm_param_present
+output reg [1:0] sel_ppm_param_present,
+output if_relu
 );
 
 //**------PARAMETER DECLARATIONS-----**//
@@ -78,11 +79,11 @@ reg [8*20:0] ascii_state; // For storing ASCII state name
 //**------WIRE DECLARATIONS-----**//
 
 wire ia_sign;
-wire [9:0]N,M;
+wire [10:0]N,M;
 wire [WIDTH_ADDR_ACT-1:0]OA_base_addr,IA_base_addr;
 wire [WIDTH_ADDR_PARAM-1:0]WGT_base_addr;
 wire act_fn;
-wire [3:0]K;
+wire [4:0]K;
 
 //**------Debugging-----**//
 
@@ -444,13 +445,15 @@ end
 
 //**------INSTRUCTION SLICING-----**//
 
-assign M = instr_present[12:3];
-assign N = instr_present[22:13];
+assign M = instr_present[12:3] + 1;
+assign N = instr_present[22:13] + 1;
 assign IA_base_addr = instr_present[23+WIDTH_ADDR_ACT-1:23];
 assign OA_base_addr = instr_present[39+WIDTH_ADDR_ACT-1:39];
 assign WGT_base_addr = instr_present[55+WIDTH_ADDR_PARAM-1:55];
 assign ia_sign = instr_present[71];
 assign act_fn = instr_present[72];
-assign K = instr_present[76:73];
+assign K = instr_present[76:73] + 1;
+
+assign if_relu = act_fn;
 
 endmodule

@@ -341,9 +341,11 @@ always @(posedge clk or negedge reset_n) begin
 								rd_req_buffer <= 0;
 								if (act_mem_addr_buffer[act_mem_addr_buffer_size] || param_mem_addr_buffer[param_mem_addr_buffer_size] || inst_mem_addr_buffer[inst_mem_addr_buffer_size]) begin
                             if (isREADOP) begin
+										  sel_ext <= 1'b1;
                                 r_SM_MAIN <= s_READ;
                             end
                             else if (isWRITEOP) begin
+										  sel_ext <= 1'b1;
                                 r_SM_MAIN <= s_WRITE;
                             end
                         end
@@ -351,6 +353,7 @@ always @(posedge clk or negedge reset_n) begin
                 end
             s_READ:
                 begin
+						  sel_ext <= 1'b1;
                     if (addr_inc) begin
                         addr_inc <= 1'b0;
                         param_mem_addr = param_mem_addr + 1;
