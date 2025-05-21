@@ -1,4 +1,19 @@
+# Astra Information
+
+## RTL Structure
+
+All RTL code for this design is located in the `RTL` Directory. This Directory does not include any FPGA specific IP, FPGA IP can instead be found in the `IP` directory. The source design constraints file can be found in the `RTL` directory as well.
+
+### Top module
+
+For FPGA development the top module is `fpga_testbench.v`, for tape out the top module should be `top_design.v`.
+
+### Design Constraints
+
+The design has two clock domains. `proc_clk` is the primary clock domain which is designed to operate at 100MHz and takes clock input from the `clk` pin in `top_design.v`. The second clock domain is `sck_clk` which is an SPI clock input that has been tested and can operate at up to 10MHz and takes input from `spi_clk` input pin.
+
 ## SPI Bus Information
+
 The SPI bus on the crazy fly processor has a control mechanism that allows it to operate in multiple different modes depending on the first byte you send in a packet. The header packet determines which memory you access, whether you read or write to the memory and how much data you read or write.
 
 | Header Byte        | Bit 7 | Bit 6 | Bit 5 | Bit 4 | Bit 3 | Bit 2 | Bit 1 | Bit 0 |
@@ -43,3 +58,4 @@ Setting bit 0 to 0 in this mode does nothing.
 |             |                 |                   |              |
 | ----------- | --------------- | ----------------- | ------------ |
 | Header Byte | 0-3 Burst Bytes | 1-2 Address Bytes | Filler Bytes |
+

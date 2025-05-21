@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps
+//`define USE_FPGA_MEM_IP
+
 //////////////////////////////////////////////////////////////////////////////////
 // Company: ICNS
 // Engineer: Adithya K
@@ -80,22 +82,31 @@ controller_top #(.WIDTH_INST_MEM(WIDTH_INST_MEM),.WIDTH_ADDR_INST(WIDTH_ADDR_INS
 
 addr_gen #(.ADDR_WIDTH(WIDTH_ADDR_ACT)) agen_actmem (.clk(clk),.reset(rst_addr_actmem),.en(en_addr_actmem),.load_base(load_base_actmem),.base_addr(base_addr_actmem),.stride(stride_actmem),.addr_reg(addr_actmem_int));
 
-//ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_ACT_MEM),.MEM_DEPTH(DEPTH_ACT_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_ACT)) act_mem (.clk(clk),.wea(wea_actmem),.data_in(actmem_in),.addr(addr_actmem),.data_out(actmem_out));
-activation_mem activation_memory (.clock(clk),.wren(wea_actmem),.data(actmem_in),.address(addr_actmem),.q(actmem_out));
-
+`ifdef USE_FPGA_MEM_IP
+	activation_mem activation_memory (.clock(clk),.wren(wea_actmem),.data(actmem_in),.address(addr_actmem),.q(actmem_out));
+`else
+	ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_ACT_MEM),.MEM_DEPTH(DEPTH_ACT_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_ACT)) act_mem (.clk(clk),.wea(wea_actmem),.data_in(actmem_in),.addr(addr_actmem),.data_out(actmem_out));
+`endif
+	
 //**------PARAMETER MEMORY (SINGLE PORT) AND ADDR GENERATION-----**//
 
 addr_gen #(.ADDR_WIDTH(WIDTH_ADDR_PARAM)) agen_parammem (.clk(clk),.reset(rst_addr_parammem),.en(en_addr_parammem),.load_base(load_base_parammem),.base_addr(base_addr_parammem),.stride(stride_parammem),.addr_reg(addr_parammem_int));
 
-//ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_PARAM_MEM),.MEM_DEPTH(DEPTH_PARAM_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_PARAM)) param_mem (.clk(clk),.wea(wea_parammem),.data_in(parammem_in_ext),.addr(addr_parammem),.data_out(parammem_out));
-parameter_mem parameter_memory (.clock(clk),.wren(wea_parammem),.data(parammem_in_ext),.address(addr_parammem),.q(parammem_out));
+`ifdef USE_FPGA_MEM_IP
+	parameter_mem parameter_memory (.clock(clk),.wren(wea_parammem),.data(parammem_in_ext),.address(addr_parammem),.q(parammem_out));
+`else
+	ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_PARAM_MEM),.MEM_DEPTH(DEPTH_PARAM_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_PARAM)) param_mem (.clk(clk),.wea(wea_parammem),.data_in(parammem_in_ext),.addr(addr_parammem),.data_out(parammem_out));
+`endif
 
 //**------INSTRUCTION MEMORY (SINGLE PORT) AND ADDR GENERATION-----**//
 
 addr_gen #(.ADDR_WIDTH(WIDTH_ADDR_INST)) agen_instmem (.clk(clk),.reset(rst_addr_instmem),.en(en_addr_instmem),.load_base(load_base_instmem),.base_addr(base_addr_instmem),.stride(stride_instmem),.addr_reg(addr_instmem_int));
 
-//ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_INST_MEM),.MEM_DEPTH(DEPTH_INST_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_INST)) inst_mem (.clk(clk),.wea(wea_instmem),.data_in(instmem_in_ext),.addr(addr_instmem),.data_out(instmem_out));
-instruction_mem instruction_memory (.clock(clk),.wren(wea_instmem),.data(instmem_in_ext),.address(addr_instmem),.q(instmem_out));
+`ifdef USE_FPGA_MEM_IP
+	instruction_mem instruction_memory (.clock(clk),.wren(wea_instmem),.data(instmem_in_ext),.address(addr_instmem),.q(instmem_out));
+`else
+	ram_sync_rw_single_port#(.MEM_WIDTH_DATA(WIDTH_INST_MEM),.MEM_DEPTH(DEPTH_INST_MEM),.WIDTH_MEM_ADDR(WIDTH_ADDR_INST)) inst_mem (.clk(clk),.wea(wea_instmem),.data_in(instmem_in_ext),.addr(addr_instmem),.data_out(instmem_out));
+`endif
 
 //**------PE ARRAY-----**//
     

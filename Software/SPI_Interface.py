@@ -179,11 +179,11 @@ class crazy_processor():
         for packet in spiData:
             resp = self._spi.xfer2(packet)
 
-        # with open(parameter_file, "r") as f:
-        #     data = f.read()
-        # spiData = packetGenerator(data, "parameter")
-        # for packet in spiData:
-        #     resp = self._spi.xfer2(packet)
+        with open(parameter_file, "r") as f:
+            data = f.read()
+        spiData = packetGenerator(data, "parameter")
+        for packet in spiData:
+            resp = self._spi.xfer2(packet)
 
     @spi_decorator
     def processor_reset(self): 
@@ -240,7 +240,7 @@ class crazy_processor():
 
 if __name__ == "__main__":
     #TODO modify code to accept main data type that is planning on being used
-    version = "14052025"
+    version = "15052025"
     if version == "15052025":
         
         instructionMemory = "data/15052025_instruction_data.txt"
@@ -262,8 +262,14 @@ if __name__ == "__main__":
     outputData = crazy_proc.processor_run(data, startAddress=startAddress)
     endtime = time.monotonic_ns()
 
+
     timeTaken = (endtime - starttime)/1000000000
     print("Output Bytes")
     print(outputData)
     print("Processing time")
     print(timeTaken)
+
+    # while True:
+    #     outputData = crazy_proc.processor_run(data, startAddress=startAddress)
+    #     print(outputData)
+    #     time.sleep(0.01)
