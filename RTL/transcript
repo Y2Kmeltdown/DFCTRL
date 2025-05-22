@@ -1,0 +1,52 @@
+# Compile of processor_TB.sv was successful.
+vsim work.processor_TB
+# vsim work.processor_TB 
+# Start time: 16:56:00 on May 22,2025
+# Loading sv_std.std
+# Loading work.processor_TB
+# Loading work.top_design
+# Loading work.processor_top
+# Loading work.controller_top
+# Loading work.addr_gen
+# Loading work.ram_sync_rw_single_port
+# Loading work.pe_array
+# Loading work.post_processing
+# Loading work.spi_top
+# Loading work.spi_controller
+# Loading work.SPI
+# Loading work.synchronizer
+# Loading work.edge_detector
+# Loading work.FIFO
+# Loading work.sync_r2w
+# Loading work.sync_w2r
+# Loading work.fifomem
+# Loading work.rptr_empty
+# Loading work.wptr_full
+# Loading work.packetizer
+# Loading work.pe
+# ** Warning: (vsim-3015) [PCDPC] - Port size (11) does not match connection size (12) for port 'in'. The port definition is at: C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/synchronizer.v(9).
+#    Time: 0 ps  Iteration: 0  Instance: /processor_TB/top_0/spi_0/packetizer_0/sck_packet_cnt_sync File: C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/Packetizer.v Line: 74
+# ** Warning: (vsim-3015) [PCDPC] - Port size (11) does not match connection size (1) for port 'out'. The port definition is at: C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/synchronizer.v(10).
+#    Time: 0 ps  Iteration: 0  Instance: /processor_TB/top_0/spi_0/packetizer_0/sck_packet_cnt_sync File: C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/Packetizer.v Line: 74
+run -all
+# Step 1: Resetting Processor
+# Step 2: Disabling Processor
+# Step 3: Transferring Instruction Data
+# File Finished
+# Step 4: Transferring Parameter Data
+# File Finished
+# Step 5: Transferring Activation Data
+# File Finished
+# Step 6: Resetting Processor
+# Step 7: Enabling Processor
+# Step 8: Wait For Done Signal
+# Step 9: Read Output Data
+# File Finished
+# Step 10: Verify Output File
+# Simulation Results Match Expected Software Results
+# ** Note: $finish    : C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/processor_TB.sv(293)
+#    Time: 37278500 ns  Iteration: 0  Instance: /processor_TB
+# 1
+# Break in Module processor_TB at C:/Users/30057721/Verilog_Projects/DFCTRL/RTL/processor_TB.sv line 293
+# End time: 16:58:38 on May 22,2025, Elapsed time: 0:02:38
+# Errors: 0, Warnings: 4

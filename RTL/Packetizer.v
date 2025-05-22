@@ -53,6 +53,9 @@ module packetizer #(
 
 );
 
+reg [11:0]  packet_counter;
+reg         packet_done;
+
 synchronizer #(
     .Width(1),
 	 .Stages(2)
@@ -91,9 +94,7 @@ synchronizer #(
 
 reg         enable;
 
-reg [11:0]  packet_counter;
 reg [4:0]   spi_clk_counter;
-reg         packet_done;
 reg [11:0]   write_time;
 reg         SPI_done;
 

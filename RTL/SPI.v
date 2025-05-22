@@ -92,7 +92,7 @@ always @(posedge clk or negedge reset_n) begin
 			
 				if (!sckReady) begin
 					sckIgnore <= sckIgnore + 1;
-					if (sckIgnore >= 128) begin
+					if (sckIgnore >= 20) begin
 						sckReady <= 1'b1;
 						bit_cnt <= 1'b0;
 					end

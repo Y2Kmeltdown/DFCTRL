@@ -66,6 +66,7 @@ SPI_OUT_ADDRESS_DEPTH = 16,
 WGT_TILE_WIDTH = 8;
 
 wire        reset_n;
+wire        proc_reset;
 //assign reset_n = reset_n_in;
 assign reset_n = !(proc_reset || !reset_n_in);
 

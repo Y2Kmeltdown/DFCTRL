@@ -5,7 +5,12 @@ module processor_TB (
 
 integer               data_file    ; // file handler
 integer               scan_file    ; // file handler
+integer               scan_file2   ; // file handler
+integer               out_file     ; // file handler
+integer               actual_file  ; // file handler
+integer               test_file    ; // file handler
 logic signed [7:0] captured_data;
+logic signed [7:0] captured_data2;
 `define NULL 0
 
 reg clk = 1'b0;
@@ -16,12 +21,19 @@ reg reset_n = 1'b1;
 reg         spi_clk = 1'b0;
 reg         MOSI = 1'b0;
 reg         chip_select_n = 1'b1;
-reg         enable;
 wire        MISO;
 wire        data_valid;
 wire        done_int;
 
 reg         dummy;
+
+reg [7:0]   reset_cmd = 8'b00001101;
+reg [7:0]   enable_cmd = 8'b00001110;
+reg [7:0]   disable_cmd = 8'b00001100;
+
+reg [2:0]   dwait = 1'b0;
+
+reg [7:0]   outputReg;
 
 top_design #(
     .WIDTH_WGT(8),
@@ -70,135 +82,214 @@ top_design #(
 
 task serialise_byte(
     input [7:0] serial_reg,
-    input       isStream
+    output reg [7:0]  outReg
     //output      MOSI,
     //output      chip_select_n,
     //output      spi_clk
 );
     begin
-        chip_select_n <= 1'b0;
-
+        #65 spi_clk <= 1'b0;
         MOSI <= serial_reg[7];
+        outReg[7] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[6];
+        outReg[6] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[5];
+        outReg[5] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[4];
+        outReg[4] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[3];
+        outReg[3] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[2];
+        outReg[2] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[1];
+        outReg[1] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
 
         MOSI <= serial_reg[0];
+        outReg[0] <= MISO;
         #65 spi_clk <= 1'b1;
         #65 spi_clk <= 1'b0;
-
-        if (!isStream) begin
-            #65 chip_select_n <= 1'b1;
-        end
-
     end
 
 endtask
 
 
 initial begin
+  // Make sure processor is reset
+  $display("Step 1: Resetting Processor");
   #10 reset_n <= 1'b0;
   #10 reset_n <= 1'b1;
-  #10 enable <= 1'b0;
-  data_file = $fopen("data/15052025_instruction_data.txt", "r");
+
+  // Make sure processor is disabled
+  $display("Step 2: Disabling Processor");
+  chip_select_n <= 1'b0;
+  #200
+  serialise_byte(disable_cmd, outputReg);
+  chip_select_n <= 1'b1;
+  
+  // Transmit Instruction Information
+  $display("Step 3: Transferring Instruction Data");
+  data_file = $fopen("../data/instructionSPI.txt", "r");
   if (data_file == `NULL) begin
     $display("data_file handle was NULL");
     $finish;
   end
 
+  chip_select_n <= 1'b0;
+  #200
   while (!$feof(data_file)) begin
     scan_file = $fscanf(data_file, "%b\n", captured_data); 
     
     //$display("%b",captured_data);
-    serialise_byte(captured_data, 1);
+    serialise_byte(captured_data, outputReg);
       //use captured_data as you would any other wire or reg value;
   end
   #20 chip_select_n <= 1'b1;
   #100 $display("File Finished");
 
-  data_file = $fopen("data/15052025_parameter_data.txt", "r");
+  // Transmit Parameter Information
+  $display("Step 4: Transferring Parameter Data");
+  data_file = $fopen("../data/parameterSPI.txt", "r");
   if (data_file == `NULL) begin
     $display("data_file handle was NULL");
     $finish;
   end
 
+  chip_select_n <= 1'b0;
+  #200
   while (!$feof(data_file)) begin
     scan_file = $fscanf(data_file, "%b\n", captured_data); 
     
     //$display("%b",captured_data);
-    serialise_byte(captured_data, 1);
+    serialise_byte(captured_data, outputReg);
       //use captured_data as you would any other wire or reg value;
   end
   #20 chip_select_n <= 1'b1;
   #100 $display("File Finished");
 
-  data_file = $fopen("data/15052025_activation_data.txt", "r");
+  // Transmit Activation Information
+  $display("Step 5: Transferring Activation Data");
+  data_file = $fopen("../data/activationSPI.txt", "r");
   if (data_file == `NULL) begin
     //$display("data_file handle was NULL");
     $finish;
   end
 
+  chip_select_n <= 1'b0;
+  #200
   while (!$feof(data_file)) begin
     scan_file = $fscanf(data_file, "%b\n", captured_data); 
     
     //$display("%b",captured_data);
-    serialise_byte(captured_data, 1);
+    serialise_byte(captured_data, outputReg);
       //use captured_data as you would any other wire or reg value;
   end
   #20 chip_select_n <= 1'b1;
   #100 $display("File Finished");
   
-  #10 reset_n <= 1'b0;
-  #10 reset_n <= 1'b1;
-  #10 enable <= 1'b1;
-
+  // Reset Processor Registers
+  $display("Step 6: Resetting Processor");
+  #200 chip_select_n <= 1'b0;
+  #200
+  serialise_byte(reset_cmd, outputReg);
+  #200 chip_select_n <= 1'b1;
+  
+  // Enable Processor
+  $display("Step 7: Enabling Processor");
+  #200 chip_select_n <= 1'b0;
+  #200
+  serialise_byte(enable_cmd, outputReg);
+  #200 chip_select_n <= 1'b1;
+  
+  // Do Nothing Until Done is active
+  $display("Step 8: Wait For Done Signal");
   while (!done_int) begin
     #10 dummy <= 1'b0;
   end
   //#12 enable <= 1'b0;
   
   // Update this to read back entire activation memory contents and then compare against expected output data
-
-  data_file = $fopen("D:/WSU_Research/RL Drone/Backup/Damien/Software/Data/activation_read_SPI.txt", "r");
+  $display("Step 9: Read Output Data");
+  data_file = $fopen("../data/Memory_Readback.txt", "r");
   if (data_file == `NULL) begin
     //$display("data_file handle was NULL");
     $finish;
   end
 
+  out_file=$fopen("../data/outData.txt", "w");
+  if (out_file == `NULL) begin
+    //$display("data_file handle was NULL");
+    $finish;
+  end
+  
+  chip_select_n <= 1'b0;
+  #200
   while (!$feof(data_file)) begin
     scan_file = $fscanf(data_file, "%b\n", captured_data); 
     
     //$display("%b",captured_data);
-    serialise_byte(captured_data, 1);
-      //use captured_data as you would any other wire or reg value;
+    serialise_byte(captured_data, outputReg);
+    if (dwait >= 6) begin
+      $fdisplay(out_file, "%h",outputReg);
+    end
+    else begin
+      dwait <= dwait + 1;
+    end
   end
   #20 chip_select_n <= 1'b1;
   #100 $display("File Finished");
+  // Enable Processor
+  #200 chip_select_n <= 1'b0;
+  #200
+  serialise_byte(disable_cmd, outputReg);
+  #200 chip_select_n <= 1'b1;
+  // Reset Processor Registers
+  #200 chip_select_n <= 1'b0;
+  #200
+  serialise_byte(reset_cmd, outputReg);
+  #200 chip_select_n <= 1'b1;
 
   #1000
+
+  $display("Step 10: Verify Output File");
+  actual_file = $fopen("../data/14052025_output_data.txt", "r");
+  if (data_file == `NULL) begin
+    //$display("data_file handle was NULL");
+    $finish;
+  end
+
+  test_file=$fopen("../data/outData.txt", "r");
+  if (out_file == `NULL) begin
+    //$display("data_file handle was NULL");
+    $finish;
+  end
+  while (!$feof(data_file)) begin
+    scan_file = $fscanf(actual_file, "%b\n", captured_data); 
+    scan_file2 = $fscanf(test_file, "%b\n", captured_data2);
+    assert (captured_data == captured_data2) $display ("OK. ACTUAL equals TEST");
+      else $error("Files do not match");
+  end
+
+  $display("Simulation Results Match Expected Software Results");
   $finish;
 end
 
