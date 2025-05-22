@@ -51,12 +51,12 @@ top_design #(
     
     .WIDTH_ADDR_ACT(12), 
     .WIDTH_ACT_MEM(8), 
-    .DEPTH_ACT_MEM(3000),
+    .DEPTH_ACT_MEM(4096),
     .ACT_MEM_HEADER(2'b10),
     
-    .WIDTH_ADDR_PARAM(15), 
+    .WIDTH_ADDR_PARAM(13), 
     .WIDTH_PARAM_MEM(128),
-    .DEPTH_PARAM_MEM(25500),
+    .DEPTH_PARAM_MEM(7000),
     .PARAM_MEM_HEADER(2'b01),
     
     .WIDTH_ADDR_INST(6),
