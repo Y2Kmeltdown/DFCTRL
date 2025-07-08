@@ -16,7 +16,7 @@ def listsplit(a:list, n:int):
     k, m = divmod(len(a), n)
     return (list(a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n)))
 
-def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = None, messageSize = None):
+def packetGenerator(data:list[int], packetType:str, read:bool = False, startAddress = None, messageSize = None):
     if packetType == "instruction":
         memoryHeader = 192 #11
         addressWidth = 6
@@ -127,6 +127,7 @@ def packetGenerator(data:str, packetType:str, read:bool = False, startAddress = 
             outputData = []
             n = 8
             for word in packet:
+                print(word)
                 outputData.extend([int(word[i:i+n],2) for i in range(0, len(word), n)])
 
         spiOut = [header] + burst + address + outputData
@@ -175,13 +176,17 @@ class crazy_processor():
         time.sleep(1)
         with open(instruction_file, "r") as f:
             data = f.read()
-        spiData = packetGenerator(data, "instruction")
+            dataList = data.split("\n")
+            dataList = list(filter(None, dataList))
+        spiData = packetGenerator(dataList, "instruction")
         for packet in spiData:
             resp = self._spi.xfer2(packet)
 
         with open(parameter_file, "r") as f:
             data = f.read()
-        spiData = packetGenerator(data, "parameter")
+            dataList = data.split("\n")
+            dataList = list(filter(None, dataList))
+        spiData = packetGenerator(dataList, "parameter")
         for packet in spiData:
             resp = self._spi.xfer2(packet)
 
@@ -239,37 +244,47 @@ class crazy_processor():
                 
 
 if __name__ == "__main__":
-    #TODO modify code to accept main data type that is planning on being used
-    version = "15052025"
-    if version == "15052025":
-        
-        instructionMemory = "data/15052025_instruction_data.txt"
-        parameterMemory = "data/15052025_parameter_data.txt"
-        activationMemory = "data/15052025_activation_data.txt"
-        startAddress = 256
-    elif version == "14052025":
-        instructionMemory = "data/14052025_instruction_data.txt"
-        parameterMemory = "data/14052025_parameter_data.txt"
-        activationMemory = "data/14052025_activation_data.txt"
-        startAddress = 128
-
-    crazy_proc = crazy_processor(instructionMemory, parameterMemory)
-
-    with open(activationMemory, "r") as f:
+    instructionMemory = "data/15052025_instruction_data.txt"
+    with open(instructionMemory, "r") as f:
         data = f.read()
+        dataList = data.split("\n")
+        dataList = list(filter(None, dataList))
+    spiData = packetGenerator(dataList, "instruction")
+    # #TODO modify code to accept main data type that is planning on being used
+    # version = "15052025"
+    # if version == "15052025":
+        
+    #     instructionMemory = "data/15052025_instruction_data.txt"
+    #     parameterMemory = "data/15052025_parameter_data.txt"
+    #     activationMemory = "data/15052025_activation_data.txt"
+    #     startAddress = 256
+    # elif version == "14052025":
+    #     instructionMemory = "data/14052025_instruction_data.txt"
+    #     parameterMemory = "data/14052025_parameter_data.txt"
+    #     activationMemory = "data/14052025_activation_data.txt"
+    #     startAddress = 128
 
-    starttime = time.monotonic_ns()
-    outputData = crazy_proc.processor_run(data, startAddress=startAddress)
-    endtime = time.monotonic_ns()
+    # crazy_proc = crazy_processor(instructionMemory, parameterMemory)
+
+    # with open(activationMemory, "r") as f:
+    #     data = f.read()
+    #     dataList = data.split("\n")
+    #     dataList = list(filter(None, dataList))
+    #     datalist = [int(data, 2) for data in dataList]
+
+    # starttime = time.monotonic_ns()
+    # outputData = crazy_proc.processor_run(dataList, startAddress=startAddress)
+    # endtime = time.monotonic_ns()
 
 
-    timeTaken = (endtime - starttime)/1000000000
-    print("Output Bytes")
-    print(outputData)
-    print("Processing time")
-    print(timeTaken)
+    # timeTaken = (endtime - starttime)/1000000000
+    # print("Output Bytes")
+    # print(outputData)
+    # print("Processing time")
+    # print(timeTaken)
 
     # while True:
     #     outputData = crazy_proc.processor_run(data, startAddress=startAddress)
     #     print(outputData)
     #     time.sleep(0.01)
+

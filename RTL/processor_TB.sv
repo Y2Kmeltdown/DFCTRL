@@ -14,7 +14,7 @@ logic signed [7:0] captured_data2;
 `define NULL 0
 
 reg clk = 1'b0;
-always #5  clk <= ~clk;
+always #1 clk <= ~clk;
 
 reg reset_n = 1'b1;
 
@@ -34,6 +34,11 @@ reg [7:0]   disable_cmd = 8'b00001100;
 reg [2:0]   dwait = 1'b0;
 
 reg [7:0]   outputReg;
+
+integer index = 0;
+integer line_num = 0;
+
+bit mismatch_found = 0;
 
 top_design #(
     .WIDTH_WGT(8),
@@ -248,7 +253,7 @@ initial begin
     
     //$display("%b",captured_data);
     serialise_byte(captured_data, outputReg);
-    if (dwait >= 6) begin
+    if (dwait >= 5) begin
       $fdisplay(out_file, "%h",outputReg);
     end
     else begin
@@ -282,18 +287,28 @@ initial begin
     //$display("data_file handle was NULL");
     $finish;
   end
-  while (!$feof(data_file)) begin
-    scan_file = $fscanf(actual_file, "%b\n", captured_data); 
-    scan_file2 = $fscanf(test_file, "%b\n", captured_data2);
-    assert (captured_data == captured_data2) $display ("OK. ACTUAL equals TEST");
-      else $error("Files do not match");
-  end
+  
 
-  $display("Simulation Results Match Expected Software Results");
-  $finish;
+while (!$feof(actual_file) && !$feof(test_file) && line_num < 4096) begin
+    scan_file  = $fscanf(actual_file, "%h\n", captured_data); 
+    scan_file2 = $fscanf(test_file,   "%h\n", captured_data2);
+    line_num++;
+
+    if (captured_data !== captured_data2) begin
+        mismatch_found = 1;
+        $display("Mismatch at line %0d: ACTUAL = %h, OBTAINED = %h", line_num, captured_data, captured_data2);
+    end
 end
 
+if (mismatch_found) begin
+    $display("RTL Output Mismatch with True Output");
+end else begin
+    $display("RTL Output Matches with True Output");
+end
 
+  //$display("Simulation Results Match Expected Software Results");
+  $finish;
+end
 
 
 endmodule

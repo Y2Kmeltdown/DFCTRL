@@ -54,7 +54,9 @@ module packetizer #(
 );
 
 reg [11:0]  packet_counter;
+wire [11:0]  packet_cnt_sync;
 reg         packet_done;
+wire         packet_done_sync;
 
 synchronizer #(
     .Width(1),
@@ -69,7 +71,7 @@ synchronizer #(
 );
 
 synchronizer #(
-    .Width(11),
+    .Width(12),
 	 .Stages(2)
 ) sck_packet_cnt_sync ( 
     .clk  (clk),
@@ -233,7 +235,8 @@ always @(posedge clk or negedge reset_n) begin
 
         data_ready <= 1'b0;
 		  
-		  reg_buffer <= 1'b0;
+		reg_buffer <= 1'b0;
+        rd_req_buffer <= 1'b0;
     end
     else begin
         case (r_SM_MAIN)
