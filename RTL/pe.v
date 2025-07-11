@@ -25,7 +25,7 @@ module pe#(parameter WIDTH_WGT = 8, DATA_WIDTH = 8, PSUM_WIDTH = 32, BIAS_WIDTH 
     input reset, rst_pe_relu_reg,
     input wea_reg1, wea_reg2, gate_en, if_relu,
     input shift, load_bias, load_psum, sel_pe_reg, 
-    input ia_sign,
+    input ia_sign,act_sparsity_en,
     input [DATA_WIDTH-1:0] ia,
     input [WIDTH_WGT-1:0] wgt,
     input [BIAS_WIDTH-1:0] bias,
@@ -40,12 +40,14 @@ wire [DATA_WIDTH+WIDTH_WGT:0] mult_out;
 wire [PSUM_WIDTH-1:0] mux_out1, mux_out2, mux_out3;
 wire [DATA_WIDTH:0] ip1_mult;
 wire [PSUM_WIDTH-1:0] add_out, add_out_relu;
+wire wea_reg1_int,wea_reg2_int;
 
 //**------REG DECLARATIONS-----**//
 
 reg [WIDTH_WGT-1:0] wgt_reg;
 reg [DATA_WIDTH-1:0] ia_reg; 
 reg [PSUM_WIDTH-1:0] psum_out1, psum_out2;
+reg gate_en_reg;
 
 //**------COMBINATIONAL LOGIC-----**//
 
@@ -58,12 +60,15 @@ assign mux_out2 = shift ? psum_in : add_out_relu;
 assign mux_out3 = load_bias ? {{(PSUM_WIDTH-BIAS_WIDTH){bias[BIAS_WIDTH-1]}}, bias} : mux_out2;
 assign psum_out = sel_pe_reg ? psum_out2 : psum_out1;
 
+assign wea_reg1_int = (wea_reg1 & gate_en_reg);
+assign wea_reg2_int = (wea_reg2 & gate_en_reg); //(shift | load_psum | load_bias | ~rst_pe_relu_reg) ? wea_reg2 : (wea_reg2 & gate_en_reg);
+
 //**------ACCUMULATION REGISTERS-----**//
 
 always @(posedge clk or negedge reset) begin
     if (~reset)
         psum_out1 <= 0;
-    else if (wea_reg1)
+    else if (wea_reg1_int)
         psum_out1 <= mux_out3;
     else
         psum_out1 <= psum_out1;
@@ -72,7 +77,7 @@ end
 always @(posedge clk or negedge reset) begin
     if (~reset)
         psum_out2 <= 0;
-    else if (wea_reg2)
+    else if (wea_reg2_int)
         psum_out2 <= mux_out3;
     else
         psum_out2 <= psum_out2;
@@ -97,5 +102,12 @@ always @(posedge clk or negedge reset) begin
         ia_reg <= ia_reg; 
     end    
 end
+
+//**------PIPELINE REGISTER-----**//
+
+always @(posedge clk) begin
+    gate_en_reg <= gate_en;
+end
+
 
 endmodule

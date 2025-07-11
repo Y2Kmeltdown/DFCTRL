@@ -25,7 +25,7 @@ module pe_array#(parameter WIDTH_WGT = 8, DATA_WIDTH = 8, PSUM_WIDTH = 32, N_PEs
     input reset,rst_pe_relu_reg,
     input [N_PEs-1:0] wea_reg1,wea_reg2, 
     input shift,load_bias,load_psum,sel_pe_reg,
-    input ia_sign,if_relu,
+    input ia_sign,act_sparsity_en,if_relu,
     input [DATA_WIDTH-1:0] ia, 
     input [WIDTH_WGT*N_PEs-1:0] wgt, 
     input [BIAS_WIDTH*N_PEs-1:0] bias,
@@ -36,9 +36,12 @@ module pe_array#(parameter WIDTH_WGT = 8, DATA_WIDTH = 8, PSUM_WIDTH = 32, N_PEs
 genvar i;    
 
 wire [PSUM_WIDTH-1:0] pkt_x[N_PEs:0];
+wire gate_en;
 
 assign pkt_x[0] = {PSUM_WIDTH{1'b0}};   
 assign psum_out = pkt_x[N_PEs];  
+
+assign gate_en = act_sparsity_en ? (~(ia == {(DATA_WIDTH){1'b0}})) : 1'b1;
 
 generate 
     for (i = 0; i < N_PEs; i = i + 1) begin: gl
@@ -53,13 +56,14 @@ generate
             .rst_pe_relu_reg(rst_pe_relu_reg),
             .wea_reg1(wea_reg1[i]),
             .wea_reg2(wea_reg2[i]),
-            .gate_en(1'b1),
+            .gate_en(gate_en),
             .if_relu(if_relu),
             .shift(shift),
             .load_bias(load_bias),
             .load_psum(load_psum),
             .sel_pe_reg(sel_pe_reg),
             .ia_sign(ia_sign),
+            .act_sparsity_en(act_sparsity_en),
             .ia(ia),
             .wgt(wgt[WIDTH_WGT*(N_PEs-i)-1 : WIDTH_WGT*(N_PEs-i-1)]),
             .bias(bias[BIAS_WIDTH*(N_PEs-i)-1 : BIAS_WIDTH*(N_PEs-i-1)]),

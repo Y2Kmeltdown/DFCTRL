@@ -20,20 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module top_design(
-    output MISO,
-    input MOSI,
-    input spi_clk,
-    input chip_select_n,
-    input clk,
-    input reset_n_in,
-    output done_int,
-    output data_valid,
-    output reset_led,
-    output clk_out
-    );
-    
-parameter 
+module top_design #(parameter 
 WIDTH_WGT = 8,
 DATA_WIDTH = 8,
 PSUM_WIDTH = 32,
@@ -46,24 +33,38 @@ BETA_WIDTH = 8,
 WIDTH_ADDR_ACT = 12, 
 WIDTH_ACT_MEM = 8, 
 DEPTH_ACT_MEM = 4096,
-ACT_MEM_HEADER = 8'b10,
+ACT_MEM_HEADER = 2'b10,
 
 WIDTH_ADDR_PARAM = 13, 
 WIDTH_PARAM_MEM = 128,
 DEPTH_PARAM_MEM = 7000,
-PARAM_MEM_HEADER = 8'b01,
+PARAM_MEM_HEADER = 2'b01,
 
 WIDTH_ADDR_INST = 6,
 WIDTH_INST_MEM = 80, 
 DEPTH_INST_MEM = 64,
-INST_MEM_HEADER = 8'b11,
+INST_MEM_HEADER = 2'b11,
  
 WIDTH_SPI_WORD = 8,
 SPI_OUT_ADDRESS_SIZE = 4,
 SPI_IN_ADDRESS_SIZE = 4,
 SPI_OUT_ADDRESS_DEPTH = 16,
 
-WGT_TILE_WIDTH = 8;
+WGT_TILE_WIDTH = 8)
+(
+    output MISO,
+    input MOSI,
+    input spi_clk,
+    input chip_select_n,
+    input clk,
+    input reset_n_in,
+    output done_int,
+    output data_valid,
+    output reset_led,
+    output clk_out
+    );
+    
+
 
 wire        reset_n;
 wire        proc_reset;

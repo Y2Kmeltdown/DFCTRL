@@ -30,7 +30,7 @@ output reg [WIDTH_ADDR_ACT-1:0]base_addr_actmem_reg,stride_actmem_reg,
 output reg rst_addr_actmem_reg,en_addr_actmem_reg,load_base_actmem_reg,wea_actmem_reg,
 output reg [WIDTH_ADDR_PARAM-1:0]base_addr_parammem_reg,stride_parammem_reg,
 output reg rst_addr_parammem_reg,en_addr_parammem_reg,load_base_parammem_reg,
-output reg rst_pe_reg_reg,rst_pe_relu_reg_reg,shift_reg,load_bias_reg,load_psum_reg,sel_pe_reg_reg,ia_sign_reg,
+output reg rst_pe_reg_reg,rst_pe_relu_reg_reg,shift_reg,load_bias_reg,load_psum_reg,sel_pe_reg_reg,ia_sign_reg,act_sparsity_en_reg,
 output reg [N_PEs-1:0]wea_reg_reg1,wea_reg_reg2,
 output reg done_reg,done_layer_reg,
 output reg [1:0] sel_ppm_param_present,
@@ -75,6 +75,7 @@ reg [WIDTH_ADDR_PARAM-1:0]WGT_base_addr_next,WGT_base_addr_present;
 reg [WIDTH_ADDR_ACT-1:0]OA_base_addr_next,OA_base_addr_present;
 reg [1:0]sel_ppm_param_next; //Change later
 reg [8*20:0] ascii_state; // For storing ASCII state name
+reg act_sparsity_en;
 
 //**------WIRE DECLARATIONS-----**//
 
@@ -141,6 +142,7 @@ end
                 WGT_base_addr_present <= 0;
                 OA_base_addr_present <= 0;
                 sel_ppm_param_present <= 0;
+                act_sparsity_en_reg <= 1'b0;
             end
         else
             begin
@@ -180,6 +182,7 @@ end
                 WGT_base_addr_present <= WGT_base_addr_next; 
                 OA_base_addr_present <= OA_base_addr_next;
                 sel_ppm_param_present <= sel_ppm_param_next;
+                act_sparsity_en_reg <= act_sparsity_en;
             end
     end
 
@@ -220,6 +223,7 @@ end
         WGT_base_addr_next = WGT_base_addr_present;
         OA_base_addr_next = OA_base_addr_present;
         sel_ppm_param_next = sel_ppm_param_present;
+        act_sparsity_en = 1'b0;
         case(current_state)
             //**------IDLE-----**//
             IDLE : begin
@@ -282,11 +286,12 @@ end
                 if(counter_present >= 3 && counter_present <= M+2)
                 begin
                     en_addr_actmem = 1'b1;
+                    act_sparsity_en = 1'b1;
                 end        
                 if (counter_present >= 5 && counter_present <= M+4) 
                 begin
                     wea_reg1 = 16'hFFFF;
-                end          
+                end         
                 if (counter_present <= M+2)
                 begin
                     en_addr_parammem = 1'b1;
@@ -337,6 +342,7 @@ end
                 if(counter_present >= 3 && counter_present <= M+2)
                 begin
                     en_addr_actmem = 1'b1;
+                    act_sparsity_en = 1'b1;
                 end        
                 if (counter_present >= 5 && counter_present <= M+4) 
                 begin

@@ -14,7 +14,7 @@ logic signed [7:0] captured_data2;
 `define NULL 0
 
 reg clk = 1'b0;
-always #1 clk <= ~clk;
+always #5 clk <= ~clk;
 
 reg reset_n = 1'b1;
 
@@ -253,7 +253,7 @@ initial begin
     
     //$display("%b",captured_data);
     serialise_byte(captured_data, outputReg);
-    if (dwait >= 5) begin
+    if (dwait >= 6) begin
       $fdisplay(out_file, "%h",outputReg);
     end
     else begin
@@ -294,9 +294,12 @@ while (!$feof(actual_file) && !$feof(test_file) && line_num < 4096) begin
     scan_file2 = $fscanf(test_file,   "%h\n", captured_data2);
     line_num++;
 
-    if (captured_data !== captured_data2) begin
-        mismatch_found = 1;
-        $display("Mismatch at line %0d: ACTUAL = %h, OBTAINED = %h", line_num, captured_data, captured_data2);
+    // Check if the line in actual_file contains "xx" (don't compare if true)
+    if (captured_data !== 8'hxx) begin
+        if (captured_data !== captured_data2) begin
+            mismatch_found = 1;
+            $display("Mismatch at line %0d: ACTUAL = %h, OBTAINED = %h", line_num, captured_data, captured_data2);
+        end
     end
 end
 

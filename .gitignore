@@ -2,6 +2,12 @@ Build/output_files
 Build/simulation
 Build/db
 Build/incremental_db
+Quartus_Files/db
+Quartus_Files/incremental_db
+Quartus_Files/output_files
+Quartus_Files/simulation
+Quartus_Files/Astra.qws
+Quartus_Files/c5_pin_model_dump.txt
 *.bak
 RTL/work
 *.mpf
